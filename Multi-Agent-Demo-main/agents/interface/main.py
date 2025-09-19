@@ -4,23 +4,17 @@ import os
 import json
 import asyncio
 import logging
-import traceback
 from typing import List, Dict, Any
 from langchain.chat_models import init_chat_model
 from langchain.prompts import ChatPromptTemplate
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from langchain.agents import create_tool_calling_agent, AgentExecutor
 
-# Import our existing Jerry agent components
-from jerry.agent.agent import ReactAgent, AgentState
-from jerry.tools.manager import OpenSourceToolManager
-from jerry.defaults import get_available_models, get_available_toolkits
-
 REQUEST_QUESTION_TOOL = "request-question"
 ANSWER_QUESTION_TOOL = "answer-question"
 MAX_CHAT_HISTORY = 3
-DEFAULT_TEMPERATURE = 0.3
-DEFAULT_MAX_TOKENS = 16000
+DEFAULT_TEMPERATURE = 0.0
+DEFAULT_MAX_TOKENS = 8000
 SLEEP_INTERVAL = 1
 ERROR_RETRY_INTERVAL = 5
 
@@ -28,7 +22,6 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(level
 logger = logging.getLogger(__name__)
 
 def load_config() -> Dict[str, Any]:
-    """Load configuration from environment variables."""
     print("[VERBOSE] Starting configuration loading...")
     runtime = os.getenv("CORAL_ORCHESTRATION_RUNTIME", None)
     print(f"[VERBOSE] CORAL_ORCHESTRATION_RUNTIME: {runtime}")
@@ -45,14 +38,12 @@ def load_config() -> Dict[str, Any]:
         "runtime": os.getenv("CORAL_ORCHESTRATION_RUNTIME", None),
         "coral_connection_url": os.getenv("CORAL_CONNECTION_URL"),
         "agent_id": os.getenv("CORAL_AGENT_ID"),
-        "model_name": os.getenv("MODEL_NAME", "mistral-large-latest"),
-        "model_provider": os.getenv("MODEL_PROVIDER", "mistral"),
+        "model_name": os.getenv("MODEL_NAME"),
+        "model_provider": os.getenv("MODEL_PROVIDER"),
         "api_key": os.getenv("MODEL_API_KEY"),
         "model_temperature": float(os.getenv("MODEL_TEMPERATURE", DEFAULT_TEMPERATURE)),
-        "model_token": int(os.getenv("MODEL_MAX_TOKENS", DEFAULT_MAX_TOKENS)),
-        "base_url": os.getenv("MODEL_BASE_URL"),
-        "slack_bot_token": os.getenv("SLACK_BOT_TOKEN"),
-        "slack_signing_secret": os.getenv("SLACK_SIGNING_SECRET")
+        "model_token": int(os.getenv("MODEL_TOKEN_LIMIT", DEFAULT_MAX_TOKENS)),
+        "base_url": os.getenv("BASE_URL")
     }
     
     print(f"[VERBOSE] Configuration loaded:")
@@ -64,23 +55,13 @@ def load_config() -> Dict[str, Any]:
     print(f"[VERBOSE]   - model_temperature: {config['model_temperature']}")
     print(f"[VERBOSE]   - model_token: {config['model_token']}")
     print(f"[VERBOSE]   - base_url: {config['base_url']}")
-    print(f"[VERBOSE]   - slack_bot_token: {'***' if config['slack_bot_token'] else None}")
-    print(f"[VERBOSE]   - slack_signing_secret: {'***' if config['slack_signing_secret'] else None}")
     
     print("[VERBOSE] Validating required fields...")
-    # Make coral_connection_url optional for standalone mode
-    required_fields = ["agent_id", "model_name", "model_provider", "api_key", "slack_bot_token", "slack_signing_secret"]
+    required_fields = ["coral_connection_url", "agent_id", "model_name", "model_provider", "api_key"]
     missing = [field for field in required_fields if not config[field]]
     if missing:
         print(f"[VERBOSE] ERROR: Missing required fields: {missing}")
         raise ValueError(f"Missing required environment variables: {', '.join(missing)}")
-    
-    # Check if coral_connection_url is missing and warn
-    if not config["coral_connection_url"]:
-        print("[VERBOSE] WARNING: CORAL_CONNECTION_URL not set - will run in standalone mode")
-    else:
-        print("[VERBOSE] CORAL_CONNECTION_URL found - will attempt Coral server connection")
-    
     print("[VERBOSE] All required fields present")
     
     print("[VERBOSE] Validating model parameters...")
@@ -98,7 +79,6 @@ def load_config() -> Dict[str, Any]:
     return config
 
 def get_tools_description(tools: List[Any]) -> str:
-    """Generate description of available tools."""
     print(f"[VERBOSE] Starting tools description generation for {len(tools)} tools...")
     
     descriptions = []
@@ -113,7 +93,6 @@ def get_tools_description(tools: List[Any]) -> str:
     return result
 
 def format_chat_history(chat_history: List[Dict[str, str]]) -> str:
-    """Format chat history for context."""
     print(f"[VERBOSE] Starting chat history formatting with {len(chat_history)} conversations...")
     
     if not chat_history:
@@ -136,7 +115,6 @@ def format_chat_history(chat_history: List[Dict[str, str]]) -> str:
     return history_str
 
 async def get_user_input(runtime: str, agent_tools: Dict[str, Any]) -> str:
-    """Get user input either from runtime or interactive mode."""
     print(f"[VERBOSE] Starting user input retrieval. Runtime mode: {runtime is not None}")
     
     if runtime is not None:
@@ -166,7 +144,6 @@ async def get_user_input(runtime: str, agent_tools: Dict[str, Any]) -> str:
     return user_input
 
 async def send_response(runtime: str, agent_tools: Dict[str, Any], response: str) -> None:
-    """Send response either via runtime or interactive mode."""
     print(f"[VERBOSE] Starting response sending. Runtime mode: {runtime is not None}")
     print(f"[VERBOSE] Response length: {len(response)} characters")
     print(f"[VERBOSE] Response preview: {response[:200]}...")
@@ -191,43 +168,36 @@ async def send_response(runtime: str, agent_tools: Dict[str, Any], response: str
     
     print("[VERBOSE] Response sending completed")
 
-async def create_jerry_agent(coral_tools: List[Any]) -> AgentExecutor:
-    """Create the Jerry agent with Coral tools integration."""
-    print(f"[VERBOSE] Starting Jerry agent creation with {len(coral_tools)} coral tools...")
+async def create_agent(coral_tools: List[Any]) -> AgentExecutor:
+    print(f"[VERBOSE] Starting agent creation with {len(coral_tools)} coral tools...")
     
     print("[VERBOSE] Generating tools description...")
     coral_tools_description = get_tools_description(coral_tools)
     print(f"[VERBOSE] Tools description generated: {len(coral_tools_description)} characters")
     
-    print("[VERBOSE] Creating Jerry agent with tools...")
-    # Initialize our existing Jerry agent
-    jerry_agent = ReactAgent(
-        model=os.getenv("MODEL_NAME", "mistral-large-latest"),
-        tools=get_available_toolkits()
-    )
-    
     print("[VERBOSE] Creating chat prompt template...")
     prompt = ChatPromptTemplate.from_messages([
         (
             "system",
-            f"""You are Jerry, an AI agent that can interact with Slack workspaces and provide AI-powered assistance. 
-            You have access to both Coral Server tools and your own Slack-specific tools.
-            
-            Coral Server tools: {coral_tools_description}
-            
-            Your capabilities include:
-            - Managing Slack messages and channels
-            - Providing AI-powered responses to user queries
-            - Interacting with other agents through Coral protocol
-            - Using various tools for web search, GitHub operations, and more
-            
-            Always use {{chat_history}} to understand the context of conversations.
-            When interacting with other agents through Coral tools, follow these steps:
-            1. Use wait_for_mentions to receive instructions from other agents
-            2. Process the instruction using your available tools
-            3. Send back a response using send_message
-            
-            For direct user interactions, provide helpful and accurate responses using your tools.
+            f"""Your primary role is to plan tasks sent by the user and send clear instructions to other agents to execute them, focusing solely on questions about the Coral Server, its tools: {coral_tools_description}, and registered agents. 
+            Always use {{chat_history}} to understand the context of the question along with the user's instructions. 
+            Think carefully about the question, analyze its intent, and create a detailed plan to address it, considering the roles and capabilities of available agents, description and their tools. 
+
+            Follow the steps in order:
+            1. Call list_agents to get all connected agents and their descriptions.
+            2. Check if the question is directly related to Coral Server (e.g., list agents, tool details). For such requests, use appropriate tools to retrieve and return the information.
+            3. If the question requires interaction with other agents, analyze the user's intent using chat history to resolve ambiguous references (e.g., 'it'). Create a detailed plan to delegate tasks:
+                - Identify which agents are relevant based on their descriptions and tools.
+                - If the task requires sequential processing (e.g., one agent's output is needed by another), structure the plan to specify the order of agent interactions.
+                - Call create_thread('threadName': 'user_request', 'participantIds': [IDs, including self]) to initiate collaboration.
+                - For each selected agent:
+                - If not in thread, call add_participant(threadId=..., 'participantIds': [agent ID]).
+                - Send clear instructions via send_message(threadId=..., content="instruction", mentions=[agent ID]). Instructions should specify the task, any dependencies (e.g., "use output from Agent X"), and expected output format.
+                - Use wait_for_mentions(timeoutMs=60000) up to 5 times to collect responses.
+                - Store responses for synthesis.
+            4. Synthesize responses into a clear, concise answer, referencing chat history if relevant to maintain context.
+            5. Return the answer.
+
             """
         ),
         ("human", "{user_input}"),
@@ -237,16 +207,16 @@ async def create_jerry_agent(coral_tools: List[Any]) -> AgentExecutor:
 
     print("[VERBOSE] Initializing chat model...")
     print(f"[VERBOSE] Model configuration:")
-    print(f"[VERBOSE]   - model: {os.getenv('MODEL_NAME', 'mistral-large-latest')}")
-    print(f"[VERBOSE]   - provider: {os.getenv('MODEL_PROVIDER', 'mistral')}")
+    print(f"[VERBOSE]   - model: {os.getenv('MODEL_NAME')}")
+    print(f"[VERBOSE]   - provider: {os.getenv('MODEL_PROVIDER')}")
     print(f"[VERBOSE]   - api_key: {'***' if os.getenv('MODEL_API_KEY') else None}")
     print(f"[VERBOSE]   - temperature: {float(os.getenv('MODEL_TEMPERATURE', DEFAULT_TEMPERATURE))}")
     print(f"[VERBOSE]   - max_tokens: {int(os.getenv('MODEL_MAX_TOKENS', DEFAULT_MAX_TOKENS))}")
     print(f"[VERBOSE]   - base_url: {os.getenv('MODEL_BASE_URL', None)}")
     
     model = init_chat_model(
-        model=os.getenv("MODEL_NAME", "mistral-large-latest"),
-        model_provider=os.getenv("MODEL_PROVIDER", "mistral"),
+        model=os.getenv("MODEL_NAME"),
+        model_provider=os.getenv("MODEL_PROVIDER"),
         api_key=os.getenv("MODEL_API_KEY"),
         temperature=float(os.getenv("MODEL_TEMPERATURE", DEFAULT_TEMPERATURE)),
         max_tokens=int(os.getenv("MODEL_MAX_TOKENS", DEFAULT_MAX_TOKENS)),
@@ -255,69 +225,56 @@ async def create_jerry_agent(coral_tools: List[Any]) -> AgentExecutor:
     print("[VERBOSE] Chat model initialized successfully")
 
     print("[VERBOSE] Creating tool calling agent...")
-    # Combine Coral tools with our existing Jerry agent tools
-    combined_tools = coral_tools + jerry_agent.tools
-    agent = create_tool_calling_agent(model, combined_tools, prompt)
+    agent = create_tool_calling_agent(model, coral_tools, prompt)
     print("[VERBOSE] Tool calling agent created successfully")
     
     print("[VERBOSE] Creating agent executor with verbose=True and return_intermediate_steps=True")
-    executor = AgentExecutor(agent=agent, tools=combined_tools, verbose=True, return_intermediate_steps=True)
+    executor = AgentExecutor(agent=agent, tools=coral_tools, verbose=True, return_intermediate_steps=True)
     print("[VERBOSE] Agent executor created successfully")
     
     return executor
 
 async def main():
-    """Main function to run the Jerry agent with Coral protocol integration."""
-    print("[VERBOSE] ========== STARTING JERRY AGENT WITH CORAL PROTOCOL ==========")
+    """Main function to run the agent in a continuous loop with chat history."""
+    print("[VERBOSE] ========== STARTING MAIN FUNCTION ==========")
     
     try:
         print("[VERBOSE] Loading configuration...")
         config = load_config()
         print("[VERBOSE] Configuration loaded successfully")
 
-        coral_tools = []
-        agent_tools = {}
+        print("[VERBOSE] Preparing Coral Server connection parameters...")
         
-        # Try to connect to Coral server, but don't fail if it's not available
-        try:
-            print("[VERBOSE] Preparing Coral Server connection parameters...")
-            
-            coral_server_url = config["coral_connection_url"]
-            print(f"[VERBOSE] Coral server URL constructed: {coral_server_url}")
-            logger.info(f"Connecting to Coral Server: {coral_server_url}")
+        coral_server_url = config["coral_connection_url"]
+        print(f"[VERBOSE] Coral server URL constructed: {coral_server_url}")
+        logger.info(f"Connecting to Coral Server: {coral_server_url}")
 
-            print("[VERBOSE] Setting up MCP client...")
-            timeout = float(os.getenv("TIMEOUT_MS", "60000"))
-            print(f"[VERBOSE] Using timeout: {timeout}ms")
-            
-            client = MultiServerMCPClient(
-                connections={
-                    "coral": {
-                        "transport": "sse",
-                        "url": coral_server_url,
-                        "timeout": timeout,
-                        "sse_read_timeout": timeout,
-                    }
+        print("[VERBOSE] Setting up MCP client...")
+        timeout = float(os.getenv("TIMEOUT_MS", "30000"))
+        print(f"[VERBOSE] Using timeout: {timeout}ms")
+        
+        client = MultiServerMCPClient(
+            connections={
+                "coral": {
+                    "transport": "sse",
+                    "url": coral_server_url,
+                    "timeout": timeout,
+                    "sse_read_timeout": timeout,
                 }
-            )
-            print("[VERBOSE] MCP client created")
-            logger.info("Coral Server connection established")
+            }
+        )
+        print("[VERBOSE] MCP client created")
+        logger.info("Coral Server connection established")
 
-            print("[VERBOSE] Retrieving coral tools...")
-            coral_tools = await client.get_tools(server_name="coral")
-            print(f"[VERBOSE] Retrieved {len(coral_tools)} coral tools:")
-            for i, tool in enumerate(coral_tools):
-                print(f"[VERBOSE]   Tool {i+1}: {tool.name}")
-            logger.info(f"Retrieved {len(coral_tools)} coral tools")
-            
-        except Exception as coral_error:
-            print(f"[VERBOSE] WARNING: Could not connect to Coral server: {str(coral_error)}")
-            print("[VERBOSE] Continuing in standalone mode without Coral tools...")
-            logger.warning(f"Coral server connection failed: {str(coral_error)}")
-            coral_tools = []
+        print("[VERBOSE] Retrieving coral tools...")
+        coral_tools = await client.get_tools(server_name="coral")
+        print(f"[VERBOSE] Retrieved {len(coral_tools)} coral tools:")
+        for i, tool in enumerate(coral_tools):
+            print(f"[VERBOSE]   Tool {i+1}: {tool.name}")
+        logger.info(f"Retrieved {len(coral_tools)} coral tools")
 
         print("[VERBOSE] Checking runtime mode and required tools...")
-        if config["runtime"] is not None and coral_tools:
+        if config["runtime"] is not None:
             print("[VERBOSE] Runtime mode detected - validating required tools...")
             required_tools = [REQUEST_QUESTION_TOOL, ANSWER_QUESTION_TOOL]
             available_tools = [tool.name for tool in coral_tools]
@@ -332,19 +289,15 @@ async def main():
                     raise ValueError(error_message)
             print("[VERBOSE] All required tools found")
         else:
-            if config["runtime"] is not None and not coral_tools:
-                print("[VERBOSE] Runtime mode detected but no Coral tools available - switching to interactive mode")
-                config["runtime"] = None
-            else:
-                print("[VERBOSE] Interactive mode - no runtime tool validation needed")
+            print("[VERBOSE] Interactive mode - no runtime tool validation needed")
         
         print("[VERBOSE] Creating agent tools dictionary...")
         agent_tools = {tool.name: tool for tool in coral_tools}
         print(f"[VERBOSE] Agent tools dictionary created with {len(agent_tools)} tools")
         
-        print("[VERBOSE] Creating Jerry agent executor...")
-        agent_executor = await create_jerry_agent(coral_tools)
-        logger.info("Jerry agent executor created")
+        print("[VERBOSE] Creating agent executor...")
+        agent_executor = await create_agent(coral_tools)
+        logger.info("Agent executor created")
 
         print("[VERBOSE] Initializing chat history...")
         chat_history: List[Dict[str, str]] = []
@@ -400,7 +353,6 @@ async def main():
                 print(f"[VERBOSE] ERROR in agent loop iteration {loop_iteration}: {str(e)}")
                 print(f"[VERBOSE] Exception type: {type(e).__name__}")
                 logger.error(f"Error in agent loop: {str(e)}")
-                traceback.print_exc()
                 print(f"[VERBOSE] Sleeping for {ERROR_RETRY_INTERVAL} seconds before retry...")
                 await asyncio.sleep(ERROR_RETRY_INTERVAL)
                 
@@ -408,7 +360,6 @@ async def main():
         print(f"[VERBOSE] FATAL ERROR in main function: {str(e)}")
         print(f"[VERBOSE] Fatal exception type: {type(e).__name__}")
         logger.error(f"Fatal error in main: {str(e)}")
-        traceback.print_exc()
         print("[VERBOSE] ========== MAIN FUNCTION TERMINATING ==========")
         raise
 

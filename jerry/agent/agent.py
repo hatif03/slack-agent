@@ -1,4 +1,5 @@
 import logging
+import os
 import uuid
 
 from jerry.tools import OpenSourceToolManager
@@ -6,7 +7,12 @@ from langchain_core.language_models.base import BaseLanguageModel
 from langchain_core.messages import ToolMessage
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableConfig, RunnableLambda
-from langchain_mistralai import ChatMistralAI
+from mistralai import Mistral
+from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.messages import BaseMessage, HumanMessage, AIMessage, SystemMessage
+from langchain_core.outputs import ChatGeneration, ChatResult
+from typing import List, Optional, Any, Dict
+from pydantic import Field
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, START, MessagesState, StateGraph
 from langgraph.prebuilt import ToolNode, tools_condition
@@ -16,6 +22,53 @@ from jerry.agent.base import BaseAgent
 from jerry.defaults import get_available_models, get_available_toolkits
 
 logger = logging.getLogger(__name__)
+
+
+class ChatMistralAI(BaseChatModel):
+    """Custom Mistral AI chat model wrapper for LangChain compatibility."""
+    
+    model: str = Field(default="mistral-large-latest")
+    api_key: Optional[str] = Field(default=None)
+    client: Optional[Mistral] = Field(default=None, exclude=True)
+    
+    def __init__(self, model: str = "mistral-large-latest", api_key: Optional[str] = None, **kwargs):
+        super().__init__(model=model, api_key=api_key, **kwargs)
+        self.client = Mistral(api_key=api_key or os.getenv("MISTRAL_API_KEY"))
+    
+    def _generate(self, messages: List[BaseMessage], stop: Optional[List[str]] = None, **kwargs) -> ChatResult:
+        """Generate a response from the Mistral model."""
+        # Convert LangChain messages to Mistral format
+        mistral_messages = []
+        for message in messages:
+            if isinstance(message, SystemMessage):
+                mistral_messages.append({"role": "system", "content": message.content})
+            elif isinstance(message, HumanMessage):
+                mistral_messages.append({"role": "user", "content": message.content})
+            elif isinstance(message, AIMessage):
+                mistral_messages.append({"role": "assistant", "content": message.content})
+        
+        # Call Mistral API
+        response = self.client.chat(
+            model=self.model,
+            messages=mistral_messages,
+            **kwargs
+        )
+        
+        # Convert response back to LangChain format
+        content = response.choices[0].message.content
+        message = AIMessage(content=content)
+        generation = ChatGeneration(message=message)
+        
+        return ChatResult(generations=[generation])
+    
+    def bind_tools(self, tools, **kwargs):
+        """Bind tools to the model."""
+        # For now, return self as we don't need tool binding for basic functionality
+        return self
+    
+    @property
+    def _llm_type(self) -> str:
+        return "mistral"
 
 
 class AgentState(MessagesState):
