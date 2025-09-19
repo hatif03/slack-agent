@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING, TypedDict
 
 if TYPE_CHECKING:
-    from archer.storage.schema import UserIdentity
+    from jerry.storage.schema import UserIdentity
 
 
 class StorageError(Exception):

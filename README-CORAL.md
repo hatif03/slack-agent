@@ -1,10 +1,10 @@
-# Slack Agent with Coral Protocol
+# Jerry with Coral Protocol
 
-This is a modified version of the Slack Agent that integrates with the Coral protocol for multi-agent orchestration.
+This is a modified version of Jerry that integrates with the Coral protocol for multi-agent orchestration.
 
 ## Overview
 
-The Slack Agent has been adapted to work with Coral protocol, allowing it to:
+Jerry has been adapted to work with Coral protocol, allowing it to:
 - Participate in multi-agent conversations
 - Receive instructions from other agents
 - Send responses back through the Coral network
@@ -38,7 +38,7 @@ The Slack Agent has been adapted to work with Coral protocol, allowing it to:
 3. **Required Environment Variables**
    - `CORAL_CONNECTION_URL` - URL to Coral server
    - `CORAL_AGENT_ID` - Unique agent identifier
-   - `MODEL_API_KEY` - OpenAI API key
+   - `MODEL_API_KEY` - Mistral AI API key
    - `SLACK_BOT_TOKEN` - Slack bot token
    - `SLACK_SIGNING_SECRET` - Slack signing secret
 
@@ -56,8 +56,8 @@ poetry run python main.py
 
 ### Using Docker
 ```bash
-docker build -t slack-agent-coral .
-docker run --env-file .env slack-agent-coral
+docker build -t jerry-coral .
+docker run --env-file .env jerry-coral
 ```
 
 ## Coral Protocol Integration

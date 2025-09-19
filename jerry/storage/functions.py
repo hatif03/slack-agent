@@ -1,12 +1,12 @@
 import logging
 from typing import TYPE_CHECKING
 
-from archer.env import FILE_STORAGE_BASE_DIR, STORAGE_TYPE
-from archer.storage.file import FileStore
-from archer.storage.schema import UserIdentity
+from jerry.env import FILE_STORAGE_BASE_DIR, STORAGE_TYPE
+from jerry.storage.file import FileStore
+from jerry.storage.schema import UserIdentity
 
 if TYPE_CHECKING:
-    from archer.storage.schema import StateStore
+    from jerry.storage.schema import StateStore
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +32,7 @@ def get_user_state(user_id: str) -> UserIdentity:
     if store.exists(user_id):
         return store.get_state(user_id)
     else:
-        return set_user_state(user_id, "openai", "gpt-4o")
+        return set_user_state(user_id, "mistral", "mistral-large-latest")
 
 
 def update_user_state(user_id: str, provider: str | None = None, model: str | None = None) -> None:

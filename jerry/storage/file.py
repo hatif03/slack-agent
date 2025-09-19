@@ -2,7 +2,7 @@ import json
 from logging import Logger
 from pathlib import Path
 
-from archer.storage.schema import StateStore, StorageResourceError, UserIdentity
+from jerry.storage.schema import StateStore, StorageResourceError, UserIdentity
 
 
 class FileStore(StateStore):

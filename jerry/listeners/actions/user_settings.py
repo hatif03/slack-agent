@@ -3,7 +3,7 @@ from typing import Any
 
 from slack_bolt import Ack
 
-from archer.storage.functions import set_user_state
+from jerry.storage.functions import set_user_state
 
 
 def set_user_settings(logger: Logger, ack: Ack, body: dict[str, Any]):

@@ -4,9 +4,9 @@ import logging
 from slack_bolt import Assistant, BoltContext, Say, SetStatus, SetSuggestedPrompts
 from slack_sdk import WebClient
 
-from archer.agent import invoke_agent
-from archer.agent.utils import markdown_to_slack
-from archer.defaults import DEFAULT_LOADING_TEXT, INITIAL_GREETING
+from jerry.agent import invoke_agent
+from jerry.agent.utils import markdown_to_slack
+from jerry.defaults import DEFAULT_LOADING_TEXT, INITIAL_GREETING
 
 # Shared assistant instance
 assistant = Assistant()

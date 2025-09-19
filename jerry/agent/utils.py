@@ -1,6 +1,6 @@
 import re
 
-from archer.env import (
+from jerry.env import (
     REDACT_CREDIT_CARD_PATTERN,
     REDACT_EMAIL_PATTERN,
     REDACT_PHONE_PATTERN,

@@ -6,8 +6,8 @@ from typing import Any
 from slack_bolt import Ack, BoltContext
 from slack_sdk import WebClient
 
-from archer.agent import invoke_agent
-from archer.agent.utils import markdown_to_slack
+from jerry.agent import invoke_agent
+from jerry.agent.utils import markdown_to_slack
 
 
 def handle_auth_complete(

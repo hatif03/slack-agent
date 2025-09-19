@@ -11,10 +11,10 @@ from langchain.prompts import ChatPromptTemplate
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from langchain.agents import create_tool_calling_agent, AgentExecutor
 
-# Import our existing Slack agent components
-from slack_agent.agent.agent import ReactAgent, AgentState
-from slack_agent.tools.manager import OpenSourceToolManager
-from slack_agent.defaults import get_available_models, get_available_toolkits
+# Import our existing Jerry agent components
+from jerry.agent.agent import ReactAgent, AgentState
+from jerry.tools.manager import OpenSourceToolManager
+from jerry.defaults import get_available_models, get_available_toolkits
 
 REQUEST_QUESTION_TOOL = "request-question"
 ANSWER_QUESTION_TOOL = "answer-question"
@@ -45,8 +45,8 @@ def load_config() -> Dict[str, Any]:
         "runtime": os.getenv("CORAL_ORCHESTRATION_RUNTIME", None),
         "coral_connection_url": os.getenv("CORAL_CONNECTION_URL"),
         "agent_id": os.getenv("CORAL_AGENT_ID"),
-        "model_name": os.getenv("MODEL_NAME", "gpt-4o"),
-        "model_provider": os.getenv("MODEL_PROVIDER", "openai"),
+        "model_name": os.getenv("MODEL_NAME", "mistral-large-latest"),
+        "model_provider": os.getenv("MODEL_PROVIDER", "mistral"),
         "api_key": os.getenv("MODEL_API_KEY"),
         "model_temperature": float(os.getenv("MODEL_TEMPERATURE", DEFAULT_TEMPERATURE)),
         "model_token": int(os.getenv("MODEL_MAX_TOKENS", DEFAULT_MAX_TOKENS)),
@@ -183,18 +183,18 @@ async def send_response(runtime: str, agent_tools: Dict[str, Any], response: str
     
     print("[VERBOSE] Response sending completed")
 
-async def create_slack_agent(coral_tools: List[Any]) -> AgentExecutor:
-    """Create the Slack agent with Coral tools integration."""
-    print(f"[VERBOSE] Starting Slack agent creation with {len(coral_tools)} coral tools...")
+async def create_jerry_agent(coral_tools: List[Any]) -> AgentExecutor:
+    """Create the Jerry agent with Coral tools integration."""
+    print(f"[VERBOSE] Starting Jerry agent creation with {len(coral_tools)} coral tools...")
     
     print("[VERBOSE] Generating tools description...")
     coral_tools_description = get_tools_description(coral_tools)
     print(f"[VERBOSE] Tools description generated: {len(coral_tools_description)} characters")
     
-    print("[VERBOSE] Creating Slack agent with tools...")
-    # Initialize our existing Slack agent
-    slack_agent = ReactAgent(
-        model=os.getenv("MODEL_NAME", "gpt-4o"),
+    print("[VERBOSE] Creating Jerry agent with tools...")
+    # Initialize our existing Jerry agent
+    jerry_agent = ReactAgent(
+        model=os.getenv("MODEL_NAME", "mistral-large-latest"),
         tools=get_available_toolkits()
     )
     
@@ -202,7 +202,7 @@ async def create_slack_agent(coral_tools: List[Any]) -> AgentExecutor:
     prompt = ChatPromptTemplate.from_messages([
         (
             "system",
-            f"""You are a Slack Agent that can interact with Slack workspaces and provide AI-powered assistance. 
+            f"""You are Jerry, an AI agent that can interact with Slack workspaces and provide AI-powered assistance. 
             You have access to both Coral Server tools and your own Slack-specific tools.
             
             Coral Server tools: {coral_tools_description}
@@ -229,16 +229,16 @@ async def create_slack_agent(coral_tools: List[Any]) -> AgentExecutor:
 
     print("[VERBOSE] Initializing chat model...")
     print(f"[VERBOSE] Model configuration:")
-    print(f"[VERBOSE]   - model: {os.getenv('MODEL_NAME', 'gpt-4o')}")
-    print(f"[VERBOSE]   - provider: {os.getenv('MODEL_PROVIDER', 'openai')}")
+    print(f"[VERBOSE]   - model: {os.getenv('MODEL_NAME', 'mistral-large-latest')}")
+    print(f"[VERBOSE]   - provider: {os.getenv('MODEL_PROVIDER', 'mistral')}")
     print(f"[VERBOSE]   - api_key: {'***' if os.getenv('MODEL_API_KEY') else None}")
     print(f"[VERBOSE]   - temperature: {float(os.getenv('MODEL_TEMPERATURE', DEFAULT_TEMPERATURE))}")
     print(f"[VERBOSE]   - max_tokens: {int(os.getenv('MODEL_MAX_TOKENS', DEFAULT_MAX_TOKENS))}")
     print(f"[VERBOSE]   - base_url: {os.getenv('MODEL_BASE_URL', None)}")
     
     model = init_chat_model(
-        model=os.getenv("MODEL_NAME", "gpt-4o"),
-        model_provider=os.getenv("MODEL_PROVIDER", "openai"),
+        model=os.getenv("MODEL_NAME", "mistral-large-latest"),
+        model_provider=os.getenv("MODEL_PROVIDER", "mistral"),
         api_key=os.getenv("MODEL_API_KEY"),
         temperature=float(os.getenv("MODEL_TEMPERATURE", DEFAULT_TEMPERATURE)),
         max_tokens=int(os.getenv("MODEL_MAX_TOKENS", DEFAULT_MAX_TOKENS)),
@@ -247,8 +247,8 @@ async def create_slack_agent(coral_tools: List[Any]) -> AgentExecutor:
     print("[VERBOSE] Chat model initialized successfully")
 
     print("[VERBOSE] Creating tool calling agent...")
-    # Combine Coral tools with our existing Slack agent tools
-    combined_tools = coral_tools + slack_agent.tools
+    # Combine Coral tools with our existing Jerry agent tools
+    combined_tools = coral_tools + jerry_agent.tools
     agent = create_tool_calling_agent(model, combined_tools, prompt)
     print("[VERBOSE] Tool calling agent created successfully")
     
@@ -259,8 +259,8 @@ async def create_slack_agent(coral_tools: List[Any]) -> AgentExecutor:
     return executor
 
 async def main():
-    """Main function to run the Slack agent with Coral protocol integration."""
-    print("[VERBOSE] ========== STARTING SLACK AGENT WITH CORAL PROTOCOL ==========")
+    """Main function to run the Jerry agent with Coral protocol integration."""
+    print("[VERBOSE] ========== STARTING JERRY AGENT WITH CORAL PROTOCOL ==========")
     
     try:
         print("[VERBOSE] Loading configuration...")
@@ -319,9 +319,9 @@ async def main():
         agent_tools = {tool.name: tool for tool in coral_tools}
         print(f"[VERBOSE] Agent tools dictionary created with {len(agent_tools)} tools")
         
-        print("[VERBOSE] Creating Slack agent executor...")
-        agent_executor = await create_slack_agent(coral_tools)
-        logger.info("Slack agent executor created")
+        print("[VERBOSE] Creating Jerry agent executor...")
+        agent_executor = await create_jerry_agent(coral_tools)
+        logger.info("Jerry agent executor created")
 
         print("[VERBOSE] Initializing chat history...")
         chat_history: List[Dict[str, str]] = []

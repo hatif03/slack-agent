@@ -31,10 +31,10 @@ async def test_imports():
         return False
     
     try:
-        from slack_agent.agent.agent import ReactAgent
-        print("✓ slack_agent.agent.agent imported successfully")
+        from jerry.agent.agent import ReactAgent
+        print("✓ jerry.agent.agent imported successfully")
     except ImportError as e:
-        print(f"✗ Failed to import slack_agent: {e}")
+        print(f"✗ Failed to import jerry: {e}")
         return False
     
     return True
@@ -70,18 +70,18 @@ async def test_agent_creation():
     print("\nTesting agent creation...")
     
     try:
-        from slack_agent.agent.agent import ReactAgent
-        from slack_agent.defaults import get_available_toolkits
+        from jerry.agent.agent import ReactAgent
+        from jerry.defaults import get_available_toolkits
         
         # Test agent creation
         agent = ReactAgent(
-            model="gpt-4o",
+            model="mistral-large-latest",
             tools=get_available_toolkits()
         )
         print("✓ ReactAgent created successfully")
         
         # Test tool manager
-        from slack_agent.tools.manager import OpenSourceToolManager
+        from jerry.tools.manager import OpenSourceToolManager
         manager = OpenSourceToolManager()
         print("✓ OpenSourceToolManager created successfully")
         

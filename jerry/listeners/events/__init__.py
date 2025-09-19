@@ -1,7 +1,7 @@
 from slack_bolt import App
 
-from archer.listeners.events.assistant import assistant
-from archer.listeners.events.home_opened import app_home_opened_callback
+from jerry.listeners.events.assistant import assistant
+from jerry.listeners.events.home_opened import app_home_opened_callback
 
 
 def register_events(app: App):

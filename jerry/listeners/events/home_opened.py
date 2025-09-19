@@ -2,8 +2,8 @@ from logging import Logger
 
 from slack_sdk import WebClient
 
-from archer.defaults import get_available_models
-from archer.storage.functions import get_user_state
+from jerry.defaults import get_available_models
+from jerry.storage.functions import get_user_state
 
 
 def app_home_opened_callback(event: dict, logger: Logger, client: WebClient):
@@ -46,7 +46,7 @@ def app_home_opened_callback(event: dict, logger: Logger, client: WebClient):
                         "type": "header",
                         "text": {
                             "type": "plain_text",
-                            "text": "Archer Settings",
+                            "text": "Jerry Settings",
                             "emoji": True,
                         },
                     },

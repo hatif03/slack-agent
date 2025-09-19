@@ -2,7 +2,7 @@ import os
 
 # High level constants
 
-BOT_NAME = "Archer"
+BOT_NAME = "Jerry"
 STORAGE_TYPE = os.environ.get("STORAGE_TYPE", "file")
 FILE_STORAGE_BASE_DIR = os.environ.get("FILE_STORAGE_BASE_DIR", "./data")
 
@@ -19,7 +19,7 @@ GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")
 GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "")
 GOOGLE_REFRESH_TOKEN = os.environ.get("GOOGLE_REFRESH_TOKEN", "")
 GOOGLE_REDIRECT_URI = os.environ.get("GOOGLE_REDIRECT_URI", "")
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
+MISTRAL_API_KEY = os.environ.get("MISTRAL_API_KEY", "")
 
 SLACK_BOT_TOKEN = os.environ.get("SLACK_BOT_TOKEN", "")
 SLACK_APP_TOKEN = os.environ.get("SLACK_APP_TOKEN", "")

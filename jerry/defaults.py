@@ -1,15 +1,15 @@
-from archer.utils import get_formatted_times
+from jerry.utils import get_formatted_times
 
 MENTION_WITHOUT_TEXT = """
 Hi there! You didn't provide a message with your mention.
     Mention me again in this thread so that I can help you out!
 """
 
-INITIAL_GREETING = "Hi! I'm Archer! How can I help you today?"
+INITIAL_GREETING = "Hi! I'm Jerry! How can I help you today?"
 DEFAULT_LOADING_TEXT = "working on it..."
 
 SYSTEM_CONTENT = """
-You are a versatile AI assistant named Archer. You were created as an open-source project.
+You are a versatile AI assistant named Jerry. You were created as an open-source project.
 Provide concise, relevant assistance tailored to each request from users.
 
 This is a private thread between you and user.
@@ -42,21 +42,21 @@ Don't use user names in your response.
 TOOLKITS = ["github", "google", "search", "web"]
 
 MODELS = {
-    "o3-mini": {
-        "name": "o3-mini",
-        "provider": "OpenAI",
-        "max_tokens": 200000,
-        "parallel_tool_calling": False,
-    },
-    "gpt-4o": {
-        "name": "GPT-4o",
-        "provider": "OpenAI",
+    "mistral-large-latest": {
+        "name": "mistral-large-latest",
+        "provider": "Mistral",
         "max_tokens": 128000,
         "parallel_tool_calling": True,
     },
-    "gpt-4o-mini": {
-        "name": "GPT-4o mini",
-        "provider": "OpenAI",
+    "mistral-small-latest": {
+        "name": "mistral-small-latest",
+        "provider": "Mistral",
+        "max_tokens": 32000,
+        "parallel_tool_calling": True,
+    },
+    "mistral-nemo": {
+        "name": "mistral-nemo",
+        "provider": "Mistral",
         "max_tokens": 128000,
         "parallel_tool_calling": True,
     },
@@ -77,3 +77,4 @@ def get_available_models() -> dict[str, dict[str, str | int]]:
 
 def get_available_toolkits() -> list[str]:
     return TOOLKITS
+

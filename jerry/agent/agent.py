@@ -1,19 +1,19 @@
 import logging
 import uuid
 
-from archer.tools import OpenSourceToolManager
+from jerry.tools import OpenSourceToolManager
 from langchain_core.language_models.base import BaseLanguageModel
 from langchain_core.messages import ToolMessage
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableConfig, RunnableLambda
-from langchain_openai import ChatOpenAI
+from langchain_mistralai import ChatMistralAI
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, START, MessagesState, StateGraph
 from langgraph.prebuilt import ToolNode, tools_condition
 from langgraph.types import interrupt
 
-from archer.agent.base import BaseAgent
-from archer.defaults import get_available_models, get_available_toolkits
+from jerry.agent.base import BaseAgent
+from jerry.defaults import get_available_models, get_available_toolkits
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +71,7 @@ class ReactAgent(BaseAgent):
     extraction and integrates Arcade-based authorization when needed.
     """
 
-    def __init__(self, model: str = "gpt-4o", tools: list[str] | None = None):
+    def __init__(self, model: str = "mistral-large-latest", tools: list[str] | None = None):
         super().__init__(model=model)
         self.manager = OpenSourceToolManager()
         self.tools = self.manager.get_tools(
@@ -96,8 +96,8 @@ class ReactAgent(BaseAgent):
         if not record:
             raise ValueError(f"Model {model} not found")
 
-        if record["provider"] == "OpenAI":
-            llm = ChatOpenAI(model=model)
+        if record["provider"] == "Mistral":
+            llm = ChatMistralAI(model=model)
         else:
             raise ValueError(f"Provider {record['provider']} not supported")
 

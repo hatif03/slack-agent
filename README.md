@@ -1,8 +1,8 @@
-# Slack Agent: Open Source AI Agent for Slack
+# Jerry: Open Source AI Agent for Slack
 
-Slack Agent is an AI Agent that lives in your slack workspace and can help you with your work.
+Jerry is an AI Agent that lives in your slack workspace and can help you with your work.
 This is an open-source version that replaces vendor-locked dependencies with open-source alternatives.
-Slack Agent can access and use various services like Google, Github, and more all from within Slack.
+Jerry can access and use various services like Google, Github, and more all from within Slack.
 
 <div style="text-align: center;">
 <video width="640" height="360" style="border-radius: 10px;" controls>
@@ -17,7 +17,7 @@ Slack Agent can access and use various services like Google, Github, and more al
 
 ## Features
 
-By default, Slack Agent can interact with and use:
+By default, Jerry can interact with and use:
 - Google Mail (via Google API)
 - Google Calendar (via Google API)
 - Google Drive (via Google API)
@@ -27,8 +27,8 @@ By default, Slack Agent can interact with and use:
 
 All tools use open-source libraries and direct API integrations without vendor lock-in.
 
-You can change the prompt and tools used by Slack Agent by editing
-the ``defaults.py`` file and adding new tools in the ``slack_agent/tools/`` directory.
+You can change the prompt and tools used by Jerry by editing
+the ``defaults.py`` file and adding new tools in the ``jerry/tools/`` directory.
 
 ## Agent
 
@@ -44,7 +44,7 @@ The graph for the agent is shown below:
 
 ## Screenshots
 
-Slack Agent uses the Slack Assistant UI so it's available on across the entire slack app.
+Jerry uses the Slack Assistant UI so it's available on across the entire slack app.
 
 <div style="text-align: center;">
   <img style="display: inline-block; width: 45%; margin: 0 10px;" alt="Screenshot 2025-03-04 at 3 23 46 AM" src="https://github.com/user-attachments/assets/22db9c33-36bf-414f-b04f-c70234552144" />
@@ -57,9 +57,9 @@ Slack Agent uses the Slack Assistant UI so it's available on across the entire s
 <br>
 <br>
 
-## Self-Hosted Slack Agent for your Slack
+## Self-Hosted Jerry for your Slack
 
-Slack Agent is not distributed as a Slack app, but you can easily self-host it the
+Jerry is not distributed as a Slack app, but you can easily self-host it the
 same way shown above.
 
 
@@ -67,35 +67,35 @@ same way shown above.
 
 - Python 3.10+
 - Poetry 1.8.4+ <2.0.0
-- OpenAI API Key
+- Mistral AI API Key
 - GitHub API Token (optional, for GitHub features)
 - Google API Credentials (optional, for Google features)
 
 
-### Install Slack Agent
+### Install Jerry
 
 Clone the repository
 
 ```bash
-git clone https://github.com/arcadeai/slack-agent.git
+git clone https://github.com/arcadeai/jerry.git
 
 ```
 Then install the local dependencies
 
 ```bash
-cd slack-agent
+cd jerry
 make install
 ```
 
 ### Get a Slack App
 
 1. Open [https://api.slack.com/apps/new](https://api.slack.com/apps/new) and choose "From an app manifest"
-2. Choose the workspace where you want to install Slack Agent
+2. Choose the workspace where you want to install Jerry
 3. Copy the contents of [config/manifest.json](./config/manifest.json) into the text box that says "*Paste your manifest code here*" (within the JSON tab) and click *Next*
 4. Review the configuration and click *Create*
 5. In the app configuration page, go to "App Home" in the left sidebar and ensure the Home Tab and Messages Tab are enabled
 6. Under "App Manifest" in the left sidebar, find the `event_subscriptions.request_url` and `interactivity.request_url` fields
-7. After you deploy Slack Agent to Modal, replace `<INSERT>` in both URLs with your Modal app URL
+7. After you deploy Jerry to Modal, replace `<INSERT>` in both URLs with your Modal app URL
 8. Click *Install to Workspace* and *Allow* on the screen that follows
 
 You'll need two values from the Slack App for your .env file:
@@ -124,7 +124,7 @@ touch .env
 # Required
 SLACK_BOT_TOKEN=<slack-bot-token>
 SLACK_SIGNING_SECRET=<slack-signing-secret>
-OPENAI_API_KEY=<openai-api-key>
+MISTRAL_API_KEY=<mistral-api-key>
 
 # Optional - GitHub integration
 GITHUB_TOKEN=<github-token>
@@ -142,7 +142,7 @@ GOOGLE_REDIRECT_URI=<google-redirect-uri>
 LANGSMITH_TRACING=true
 LANGSMITH_ENDPOINT="https://api.smith.langchain.com"
 LANGSMITH_API_KEY=<langsmith-api-key>
-LANGSMITH_PROJECT="archer"
+LANGSMITH_PROJECT="jerry"
 
 LOG_LEVEL=INFO
 ```

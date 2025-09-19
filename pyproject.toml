@@ -1,9 +1,9 @@
 [tool.poetry]
-name = "slack-agent"
+name = "jerry"
 version = "0.2.0"
-description = "Slack Agent is a LLM Agent that lives in your slack workspace"
+description = "Jerry is a LLM Agent that lives in your slack workspace"
 packages = [
-    {include="slack_agent", from="."}
+    {include="jerry", from="."}
 ]
 authors = ["Arcade AI <dev@arcade.dev>"]
 
@@ -16,7 +16,7 @@ build-backend = "poetry.core.masonry.api"
 python = ">=3.10,<3.13"
 slack-bolt = "~1.21.0"
 python-dotenv = "^1.0.1"
-langchain-openai = "~0.3.7"
+langchain-mistralai = "~0.3.0"
 langchain-community = "^0.3.0"
 langchain = "^0.3.25"
 langchain-mcp-adapters = "^0.1.7"
@@ -28,6 +28,7 @@ google-auth = "^2.23.0"
 google-auth-oauthlib = "^1.1.0"
 fastapi = {extras = ["standard"], version = "^0.110.3"}
 langgraph = "^0.2.0"
+duckduckgo-search = "^8.1.1"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -42,7 +43,7 @@ modal = "0.73.*"
 
 
 [tool.mypy]
-files = ["slack_agent"]
+files = ["jerry"]
 python_version = "3.10"
 disallow_untyped_defs = "True"
 disallow_any_unimported = "True"
@@ -59,7 +60,7 @@ testpaths = ["tests"]
 
 [tool.coverage.run]
 branch = true
-source = ["slack_agent"]
+source = ["jerry"]
 
 [tool.coverage.report]
 skip_empty = true

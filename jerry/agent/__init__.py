@@ -4,11 +4,11 @@ from dataclasses import dataclass
 
 from langgraph.types import Command
 
-from archer.agent.agent import ReactAgent
-from archer.agent.base import BaseAgent
-from archer.agent.utils import slack_to_markdown
-from archer.defaults import get_system_prompt
-from archer.storage.functions import get_user_state
+from jerry.agent.agent import ReactAgent
+from jerry.agent.base import BaseAgent
+from jerry.agent.utils import slack_to_markdown
+from jerry.defaults import get_system_prompt
+from jerry.storage.functions import get_user_state
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +25,7 @@ class AgentResponse:
     thread_id: str | None = None
 
 
-def get_agent(model: str = "gpt-4o") -> BaseAgent:
+def get_agent(model: str = "mistral-large-latest") -> BaseAgent:
     """
     Create and cache a ReactAgent (which holds the tool definitions) for the given model.
 
