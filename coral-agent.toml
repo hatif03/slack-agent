@@ -1,0 +1,44 @@
+[agent]
+name = "slack-agent"
+version = "0.2.0"
+description = "Slack Agent that can interact with Slack workspace, manage messages, and provide AI-powered assistance"
+
+[options.MODEL_API_KEY]
+type = "string"
+description = "API key for the model provider"
+
+[options.SLACK_BOT_TOKEN]
+type = "string"
+description = "Slack bot token for the service"
+
+[options.SLACK_SIGNING_SECRET]
+type = "string"
+description = "Slack signing secret for the service"
+
+[options.MODEL_NAME]
+type = "string"
+description = "What model to use (e.g 'gpt-4o')"
+default = "gpt-4o"
+
+[options.MODEL_PROVIDER]
+type = "string"
+description = "What model provider to use (e.g 'openai', etc)"
+default = "openai"
+
+[options.MODEL_MAX_TOKENS]
+type = "string"
+description = "Max tokens to use"
+default = "16000"
+
+[options.MODEL_TEMPERATURE]
+type = "string"
+description = "What model temperature to use"
+default = "0.3"
+
+[options.TIMEOUT_MS]
+type = "string"
+description = "Connection/tool timeouts in ms"
+default = "60000"
+
+[runtimes.executable]
+command = ["bash", "-c", "./run_agent.sh main.py"]
